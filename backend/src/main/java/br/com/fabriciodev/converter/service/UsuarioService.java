@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 
 import br.com.fabriciodev.converter.components.AuthContext;
-import br.com.fabriciodev.converter.components.XDebug;
 import br.com.fabriciodev.converter.config.Constants;
 import br.com.fabriciodev.converter.config.GoogleOAuthProperties;
 import br.com.fabriciodev.converter.dto.GoogleLoginRequest;
@@ -194,7 +193,7 @@ public class UsuarioService {
             throw new RuntimeException("Usuário não encontrado ou inativo.");
         }
 
-        if (!usuario.getIdCadastroTipo().equals(Constants.ID_TIPO_CADASTRO_CURRENCY - converter)) {
+        if (!usuario.getIdCadastroTipo().equals(Constants.ID_TIPO_CADASTRO_CURRENCY)) {
             throw new RuntimeException("Este e-mail está vinculado a outro tipo de login.");
         }
 
@@ -287,7 +286,7 @@ public class UsuarioService {
         }
 
         if (usuario.getIdCadastroTipo() == null) {
-            usuario.setIdCadastroTipo(Constants.ID_TIPO_CADASTRO_CURRENCY - converter);
+            usuario.setIdCadastroTipo(Constants.ID_TIPO_CADASTRO_CURRENCY);
         }
 
         usuario.setDsSenha(usuario.getDsSenha() != null ? md5(usuario.getDsSenha()) : null);

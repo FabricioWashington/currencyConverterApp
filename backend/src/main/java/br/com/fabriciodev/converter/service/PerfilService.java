@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import br.com.fabriciodev.converter.config.Constants;
 import br.com.fabriciodev.converter.dto.PerfilDTO;
-import br.com.fabriciodev.converter.dto.TipoCartaoDTO;
 import br.com.fabriciodev.converter.dto.filtro.FiltroDTO;
 import br.com.fabriciodev.converter.model.Perfil;
 import br.com.fabriciodev.converter.repository.PerfilRepository;

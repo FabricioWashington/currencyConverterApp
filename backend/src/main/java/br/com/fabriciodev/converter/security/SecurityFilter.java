@@ -1,4 +1,4 @@
-package br.com.fabriciodev.converter.security-converter.security;
+package br.com.fabriciodev.converter.security;
 
 import br.com.fabriciodev.converter.service.TokenService;
 import br.com.fabriciodev.converter.model.VwAcessos;
