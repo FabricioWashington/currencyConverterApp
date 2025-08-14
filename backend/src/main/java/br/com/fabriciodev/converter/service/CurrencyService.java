@@ -17,13 +17,10 @@ import br.com.fabriciodev.converter.dto.CurrencyDTO;
 import br.com.fabriciodev.converter.dto.ExchangeRateDTO;
 import br.com.fabriciodev.converter.dto.filtro.FiltroDTO;
 import br.com.fabriciodev.converter.model.ConversionHistory;
-import br.com.fabriciodev.converter.model.Currency;
 import br.com.fabriciodev.converter.model.ExchangeRate;
-import br.com.fabriciodev.converter.model.RateSource;
 import br.com.fabriciodev.converter.repository.ConversionHistoryRepository;
 import br.com.fabriciodev.converter.repository.CurrencyRepository;
 import br.com.fabriciodev.converter.repository.ExchangeRateRepository;
-import br.com.fabriciodev.converter.repository.RateSourceRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -32,73 +29,76 @@ public class CurrencyService {
 
     private final CurrencyRepository currencyRepo;
     private final ExchangeRateRepository rateRepo;
-    private final RateSourceRepository sourceRepo;
     private final ConversionHistoryRepository historyRepo;
     private final ModelMapper mapper;
     private final AuthContext auth;
 
-    /** Lista de moedas ativas */
     public List<CurrencyDTO> findActiveCurrencies() {
-        return currencyRepo.findByActiveTrueOrderByCodeAsc()
+        return currencyRepo.findByInAtivoTrueOrderByCodeAsc()
                 .stream().map(m -> mapper.map(m, CurrencyDTO.class))
                 .collect(Collectors.toList());
     }
 
-    /** Últimas taxas para uma base (pega a mais recente por quote) */
     public List<ExchangeRateDTO> latestByBase(String base) {
-        List<ExchangeRate> list = rateRepo.findLatestByBase(base.toUpperCase());
+        List<ExchangeRate> list = rateRepo.findLatestByCoMoedaBase(base.toUpperCase());
         return list.stream().map(er -> {
             ExchangeRateDTO dto = new ExchangeRateDTO();
-            dto.setSourceId(er.getSource().getId());
-            dto.setBase(er.getBase());
-            dto.setQuote(er.getQuote());
-            dto.setRate(er.getRate().doubleValue());
-            dto.setAsOfDate(er.getAsOfDate());
-            dto.setFetchedAt(er.getFetchedAt());
+            dto.setId_fonte_cotacao(er.getFonte().getId_fonte_cotacao());
+            dto.setCo_moeda_base(er.getCo_moeda_base());
+            dto.setCo_moeda_cotada(er.getCo_moeda_cotada());
+            dto.setVl_taxa(er.getVl_taxa().doubleValue());
+            dto.setDt_referencia(er.getDt_referencia());
+            dto.setDt_coleta(er.getDt_coleta());
             return dto;
         }).collect(Collectors.toList());
     }
 
-    /** Conversão simples com última taxa conhecida (qualquer fonte) */
     @Transactional
-    public ConvertResponseDTO convert(String from, String to, Double amount, String ip, String userAgent) {
-        String f = from.toUpperCase();
-        String t = to.toUpperCase();
+    public ConvertResponseDTO convert(String co_moeda_origem, String co_moeda_destino, Double vl_montante,
+            String ds_ip_cliente,
+            String ds_user_agent) {
+        String coMoedaOrigem = co_moeda_origem.toUpperCase();
+        String coMoedaDestino = co_moeda_destino.toUpperCase();
 
-        if (f.equals(t)) {
-            return new ConvertResponseDTO(f, t, amount, 1.0, amount);
+        if (coMoedaOrigem.equals(coMoedaDestino)) {
+            return new ConvertResponseDTO(coMoedaOrigem, coMoedaDestino, vl_montante, 1.0, vl_montante);
         }
 
-        BigDecimal rate = rateRepo.findLatestRateValue(f, t)
-                .orElseThrow(() -> new IllegalArgumentException("Moeda não suportada: " + f + "->" + t));
+        BigDecimal vl_taxa = rateRepo.findLatestRateValue(
+                coMoedaOrigem.toUpperCase(),
+                coMoedaDestino.toUpperCase());
+        if (vl_taxa == null) {
+            throw new IllegalArgumentException("Moeda não suportada: " + coMoedaOrigem + "->" + coMoedaDestino);
+        }
 
-        double result = BigDecimal.valueOf(amount).multiply(rate).doubleValue();
+        double result = BigDecimal.valueOf(vl_montante).multiply(vl_taxa).doubleValue();
 
-        // registra histórico
         ConversionHistory h = new ConversionHistory();
-        h.setFromCurrency(f);
-        h.setToCurrency(t);
-        h.setAmount(BigDecimal.valueOf(amount));
-        h.setRate(rate);
-        h.setClientIp(ip);
-        h.setUserAgent(userAgent);
-        h.setConvertedAt(OffsetDateTime.now());
-        h.setIdUsuario(auth.getIdUsuario()); // se quiser rastrear usuário
+        h.setCo_moeda_origem(coMoedaOrigem);
+        h.setCo_moeda_destino(coMoedaDestino);
+        h.setVl_montante(BigDecimal.valueOf(vl_montante));
+        h.setVl_taxa(vl_taxa);
+        h.setDs_ip_cliente(ds_ip_cliente);
+        h.setDs_user_agent(ds_user_agent);
+        h.setDt_conversao(OffsetDateTime.now());
+        h.setId_usuario(auth.getIdUsuario());
         historyRepo.save(h);
 
-        return new ConvertResponseDTO(f, t, amount, rate.doubleValue(), result);
+        return new ConvertResponseDTO(coMoedaOrigem, coMoedaDestino, vl_montante, vl_taxa.doubleValue(), result);
     }
 
-    /** Busca paginada de taxas (base, quote, data, source) */
     public List<ExchangeRateDTO> searchRates(FiltroDTO filtro, Map<String, Object> dataFiltro) {
-        String base = dataFiltro.getOrDefault("base", "").toString().toUpperCase();
-        String quote = dataFiltro.getOrDefault("quote", "").toString().toUpperCase();
-        Integer sourceId = dataFiltro.get("sourceId") != null ? Integer.parseInt(dataFiltro.get("sourceId").toString())
+        String co_moeda_base = dataFiltro.getOrDefault("co_moeda_base", "").toString().toUpperCase();
+        String co_moeda_cotada = dataFiltro.getOrDefault("co_moeda_cotada", "").toString().toUpperCase();
+        Integer id_fonte_cotacao = dataFiltro.get("id_fonte_cotacao") != null
+                ? Integer.parseInt(dataFiltro.get("id_fonte_cotacao").toString())
                 : null;
-        LocalDate date = dataFiltro.get("asOfDate") != null ? LocalDate.parse(dataFiltro.get("asOfDate").toString())
+        LocalDate dt_referencia = dataFiltro.get("dt_referencia") != null
+                ? LocalDate.parse(dataFiltro.get("dt_referencia").toString())
                 : null;
 
-        List<ExchangeRate> all = rateRepo.searchFlexible(base, quote, sourceId, date);
+        List<ExchangeRate> all = rateRepo.searchFlexible(co_moeda_base, co_moeda_cotada, id_fonte_cotacao,
+                dt_referencia);
         List<ExchangeRate> page = all.stream()
                 .skip((long) filtro.getPage() * filtro.getPageSize())
                 .limit(filtro.getPageSize())
@@ -106,31 +106,13 @@ public class CurrencyService {
 
         return page.stream().map(er -> {
             ExchangeRateDTO dto = new ExchangeRateDTO();
-            dto.setSourceId(er.getSource().getId());
-            dto.setBase(er.getBase());
-            dto.setQuote(er.getQuote());
-            dto.setRate(er.getRate().doubleValue());
-            dto.setAsOfDate(er.getAsOfDate());
-            dto.setFetchedAt(er.getFetchedAt());
+            dto.setId_fonte_cotacao(er.getFonte().getId_fonte_cotacao());
+            dto.setCo_moeda_base(er.getCo_moeda_base());
+            dto.setCo_moeda_cotada(er.getCo_moeda_cotada());
+            dto.setVl_taxa(er.getVl_taxa().doubleValue());
+            dto.setDt_referencia(er.getDt_referencia());
+            dto.setDt_coleta(er.getDt_coleta());
             return dto;
         }).collect(Collectors.toList());
-    }
-
-    /** Opcional: seed rápido para testes */
-    @Transactional
-    public void seedExampleRates() {
-        RateSource src = sourceRepo.findByName("Frankfurter")
-                .orElseGet(() -> sourceRepo.save(new RateSource(null, "Frankfurter",
-                        "https://api.frankfurter.app", "API pública ECB", OffsetDateTime.now())));
-
-        if (currencyRepo.count() == 0) {
-            currencyRepo.save(new Currency("USD", "US Dollar", 840, 2, true, OffsetDateTime.now()));
-            currencyRepo.save(new Currency("BRL", "Brazilian Real", 986, 2, true, OffsetDateTime.now()));
-            currencyRepo.save(new Currency("EUR", "Euro", 978, 2, true, OffsetDateTime.now()));
-        }
-
-        rateRepo.upsert(src.getId(), "USD", "BRL", new BigDecimal("5.20"), LocalDate.now());
-        rateRepo.upsert(src.getId(), "USD", "EUR", new BigDecimal("0.90"), LocalDate.now());
-        rateRepo.upsert(src.getId(), "EUR", "BRL", new BigDecimal("5.78"), LocalDate.now());
     }
 }

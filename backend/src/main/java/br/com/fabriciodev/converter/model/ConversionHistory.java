@@ -3,41 +3,51 @@ package br.com.fabriciodev.converter.model;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "conversion_history", schema = "fx")
+@Table(name = "conversao_historico", schema = "fx")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ConversionHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "id_conversao", nullable = false)
+    private Long id_conversao;
 
-    @Column(name = "from_currency", length = 3, nullable = false)
-    private String fromCurrency;
+    @Column(name = "co_moeda_origem", length = 3, nullable = false)
+    private String co_moeda_origem;
 
-    @Column(name = "to_currency", length = 3, nullable = false)
-    private String toCurrency;
+    @Column(name = "co_moeda_destino", length = 3, nullable = false)
+    private String co_moeda_destino;
 
-    @Column(name = "amount", nullable = false, precision = 20, scale = 10)
-    private BigDecimal amount;
+    @Column(name = "vl_montante", nullable = false, precision = 20, scale = 10)
+    private BigDecimal vl_montante;
 
-    @Column(name = "rate", nullable = false, precision = 20, scale = 10)
-    private BigDecimal rate;
+    @Column(name = "vl_taxa", nullable = false, precision = 20, scale = 10)
+    private BigDecimal vl_taxa;
 
-    @Column(name = "converted_at", nullable = false)
-    private OffsetDateTime convertedAt = OffsetDateTime.now();
+    @Column(name = "vl_resultado", nullable = false, precision = 20, scale = 10)
+    private BigDecimal vl_resultado;
 
-    @Column(name = "client_ip")
-    private String clientIp;
+    @Column(name = "dt_conversao", nullable = false)
+    private OffsetDateTime dt_conversao = OffsetDateTime.now();
 
-    @Column(name = "user_agent")
-    private String userAgent;
+    @Column(name = "ds_ip_cliente")
+    private String ds_ip_cliente;
 
-    // útil se quiser rastrear quem fez a conversão
+    @Column(name = "ds_user_agent")
+    private String ds_user_agent;
+
     @Column(name = "id_usuario")
-    private Integer idUsuario;
+    private Integer id_usuario;
 }

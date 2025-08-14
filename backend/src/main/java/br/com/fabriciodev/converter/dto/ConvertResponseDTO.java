@@ -8,9 +8,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ConvertResponseDTO {
-    private String from;
-    private String to;
-    private Double amount;
-    private Double rate;
-    private Double result;
+    private String co_moeda_origem;
+    private String co_moeda_destino;
+    private Double vl_montante;
+    private Double vl_taxa;
+    private Double vl_resultado;
 }

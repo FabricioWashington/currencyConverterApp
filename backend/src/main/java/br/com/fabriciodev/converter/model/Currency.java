@@ -2,31 +2,36 @@ package br.com.fabriciodev.converter.model;
 
 import java.time.OffsetDateTime;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "currency", schema = "fx")
+@Table(name = "moeda", schema = "fx")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Currency {
     @Id
-    @Column(name = "code", length = 3)
-    private String code;
+    @Column(name = "co_moeda", length = 3)
+    private String co_moeda;
 
-    @Column(name = "name", nullable = false)
-    private String name;
+    @Column(name = "no_moeda", nullable = false)
+    private String no_moeda;
 
-    @Column(name = "numeric_code")
-    private Integer numericCode;
+    @Column(name = "nu_codigo_numero")
+    private Integer nu_codigo_numero;
 
-    @Column(name = "scale", nullable = false)
-    private Integer scale = 2;
+    @Column(name = "nu_casas_decimais", nullable = false)
+    private Integer nu_casas_decimais = 2;
 
-    @Column(name = "active", nullable = false)
-    private Boolean active = true;
+    @Column(name = "in_ativo", nullable = false)
+    private Boolean in_ativo = true;
 
-    @Column(name = "created_at", nullable = false)
-    private OffsetDateTime createdAt = OffsetDateTime.now();
+    @Column(name = "dt_criacao", nullable = false)
+    private OffsetDateTime dt_criacao = OffsetDateTime.now();
 }

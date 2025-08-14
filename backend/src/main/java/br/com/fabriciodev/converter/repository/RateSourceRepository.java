@@ -9,5 +9,5 @@ import br.com.fabriciodev.converter.model.RateSource;
 
 @Repository
 public interface RateSourceRepository extends JpaRepository<RateSource, Integer> {
-    Optional<RateSource> findByName(String name);
+    Optional<RateSource> findByNoFonte(String no_fonte);
 }

@@ -4,7 +4,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import br.com.fabriciodev.converter.components.BaseApiController;
 import br.com.fabriciodev.converter.components.BuildResult;
@@ -14,9 +21,8 @@ import br.com.fabriciodev.converter.dto.CurrencyDTO;
 import br.com.fabriciodev.converter.dto.ExchangeRateDTO;
 import br.com.fabriciodev.converter.dto.filtro.FiltroDTO;
 import br.com.fabriciodev.converter.dto.retornoJson.RetornoListaJsonDTO;
-import br.com.fabriciodev.converter.dto.retornoJson.RetornoSucessoJsonDTO;
-import br.com.fabriciodev.converter.messages.GenericMessages;
 import br.com.fabriciodev.converter.service.CurrencyService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -26,7 +32,6 @@ public class CurrencyController extends BaseApiController {
 
     private final CurrencyService service;
 
-    /** Lista moedas ativas (símbolos) */
     @GetMapping("/symbols")
     public ResponseEntity<?> symbols() {
         try {
@@ -37,7 +42,6 @@ public class CurrencyController extends BaseApiController {
         }
     }
 
-    /** Últimas taxas para uma base (ex.: base=USD) */
     @GetMapping("/rates/{base}")
     public ResponseEntity<?> latestByBase(@PathVariable String base) {
         try {
@@ -48,22 +52,23 @@ public class CurrencyController extends BaseApiController {
         }
     }
 
-    /** Converter valores: /convert?from=USD&to=BRL&amount=123.45 */
     @GetMapping("/convert")
     public ResponseEntity<?> convert(
-            @RequestParam String from,
-            @RequestParam String to,
-            @RequestParam Double amount,
+            @RequestParam String co_moeda_origem,
+            @RequestParam String co_moeda_destino,
+            @RequestParam Double vl_montante,
+            HttpServletRequest request,
             @RequestHeader(value = "User-Agent", required = false) String userAgent) {
         try {
-            ConvertResponseDTO res = service.convert(from, to, amount, getClientIp(), userAgent);
+            String clientIp = resolveClientIp(request);
+            ConvertResponseDTO res = service.convert(
+                    co_moeda_origem, co_moeda_destino, vl_montante, clientIp, userAgent);
             return ResponseHandler.renderJSON(BuildResult.json(res));
         } catch (Exception ex) {
             return error(ex);
         }
     }
 
-    /** Busca paginada/filtrada de taxas (ex.: base, quote, data) */
     @PostMapping("/rates/search")
     public ResponseEntity<?> searchRates(@RequestBody FiltroDTO filtro) {
         try {
@@ -75,15 +80,18 @@ public class CurrencyController extends BaseApiController {
         }
     }
 
-    /** Reprocessar/seed (opcional), útil para testes manuais */
-    @PostMapping("/seed")
-    public ResponseEntity<?> seed() {
-        try {
-            service.seedExampleRates();
-            return ResponseHandler.renderJSON(
-                    new RetornoSucessoJsonDTO(GenericMessages.get("generic.sucesso")));
-        } catch (Exception ex) {
-            return error(ex);
+    // ---------------- util ----------------
+    private String resolveClientIp(HttpServletRequest request) {
+        String[] headers = {
+                "X-Forwarded-For", "X-Real-IP", "CF-Connecting-IP",
+                "X-Client-IP", "Forwarded"
+        };
+        for (String h : headers) {
+            String v = request.getHeader(h);
+            if (v != null && !v.isBlank()) {
+                return v.split(",")[0].trim();
+            }
         }
+        return request.getRemoteAddr();
     }
 }

@@ -8,9 +8,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CurrencyDTO {
-    private String code;
-    private String name;
-    private Integer numericCode;
-    private Integer scale;
-    private Boolean active;
+    private String co_moeda;
+    private String no_moeda;
+    private Integer nu_codigo_numero;
+    private Integer nu_casas_decimais;
+    private Boolean in_ativo;
 }

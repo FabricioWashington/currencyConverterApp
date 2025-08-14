@@ -8,5 +8,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CurrencyRepository extends JpaRepository<Currency, String> {
-    List<Currency> findByActiveTrueOrderByCodeAsc();
+    List<Currency> findByInAtivoTrueOrderByCodeAsc();
 }

@@ -69,6 +69,20 @@ public abstract class BaseApiController {
         return sb.toString();
     }
 
+    private String resolveClientIp(HttpServletRequest request) {
+        String[] headers = {
+                "X-Forwarded-For", "X-Real-IP", "CF-Connecting-IP",
+                "X-Client-IP", "Forwarded"
+        };
+        for (String h : headers) {
+            String v = request.getHeader(h);
+            if (v != null && !v.isBlank()) {
+                return v.split(",")[0].trim();
+            }
+        }
+        return request.getRemoteAddr();
+    }
+
     protected ResponseEntity<Object> error(Exception ex) {
         String message = ex.getMessage();
         int code = message != null && message.contains("Por favor, corrija os seguintes erros") ? 400 : 500;

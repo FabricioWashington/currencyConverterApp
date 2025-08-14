@@ -11,10 +11,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ExchangeRateDTO {
-    private Integer sourceId;
-    private String base;
-    private String quote;
-    private Double rate;
-    private LocalDate asOfDate;
-    private OffsetDateTime fetchedAt;
+    private Integer id_fonte_cotacao;
+    private String co_moeda_base;
+    private String co_moeda_cotada;
+    private Double vl_taxa;
+    private LocalDate dt_referencia;
+    private OffsetDateTime dt_coleta;
 }
